@@ -1,0 +1,16 @@
+python-dotenv==1.0.1
+requests==2.32.3
+streamlit==1.38.0
+langchain==0.1.16
+langchain-openai==0.0.8
+langchain-community==0.0.38
+chromadb==0.5.5
+sentence-transformers==2.7.0
+rapidfuzz==3.6.1
+pydantic==1.10.13
+rebrick==0.2.0
+brickse==0.1.0  # Included as placeholder; remove if unused
+numpy==1.26.4
+scipy==1.13.1
+scikit-learn==1.4.2
+spacy==3.7.2
