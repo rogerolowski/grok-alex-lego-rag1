@@ -16,11 +16,15 @@ conn = sqlite3.connect("lego_data.db")
 cursor = conn.cursor()
 print("Connected to SQLite database")
 
-# Load data into ChromaDB (using preloaded data)
+# Load data into ChromaDB
 print("Loading data into ChromaDB...")
 texts = [row[3] for row in cursor.execute("SELECT details FROM lego_data").fetchall()]
 if not texts:
-    st.error("No data found in database. Run preload_db.py first.")
+    st.error("No data found in database. Would you like to preload it now?")
+    if st.button("Preload Database"):
+        import subprocess
+        subprocess.run(["python", "preload_db.py"])
+        st.experimental_rerun()  # Refresh the app
 else:
     print(f"Loaded {len(texts)} records from database")
 embeddings = OpenAIEmbeddings(openai_api_key=openai_api_key)
