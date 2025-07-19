@@ -2,6 +2,27 @@ image:
   file: .gitpod.Dockerfile
 
 tasks:
+  - name: Health Check
+    command: |
+      echo "🏥 Running Health Checks..."
+      source .venv/bin/activate
+      
+      # Quick import tests
+      python -c "import streamlit, langchain, faiss, duckdb; print('✅ Core imports OK')" || echo "❌ Core imports failed"
+      python -c "import app; print('✅ App module OK')" || echo "❌ App module failed"
+      
+      # Database connection test
+      python -c "import duckdb; conn = duckdb.connect('lego_data.duckdb'); print('✅ Database OK')" || echo "❌ Database failed"
+      
+      # Environment check
+      python -c "import os; print(f'✅ Environment: RAG_MODE={os.getenv(\"RAG_MODE\", \"not set\")}')" || echo "❌ Environment check failed"
+      
+      # Run comprehensive debug check (optional)
+      echo "🔍 Running comprehensive system check..."
+      python debug_setup.py || echo "⚠️ Debug check had issues (non-critical)"
+      
+      echo "🏥 Health check complete!"
+
   - name: RAG Startup
     # Use 'before' for setup that should happen before the main command
     before: |
