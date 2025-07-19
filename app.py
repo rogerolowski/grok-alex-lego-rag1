@@ -77,7 +77,18 @@ def initialize_system():
     try:
         conn = duckdb.connect("lego_data.duckdb")
         embeddings = OpenAIEmbeddings(openai_api_key=openai_api_key)
-        vectorstore = FAISS.load_local("./faiss_index", embeddings)
+        
+        # Load FAISS index with security setting for pickle files
+        import pickle
+        import faiss
+        from langchain_community.vectorstores import FAISS
+        
+        # Set allow_dangerous_deserialization for trusted local files
+        vectorstore = FAISS.load_local(
+            "./faiss_index", 
+            embeddings,
+            allow_dangerous_deserialization=True
+        )
         llm = ChatOpenAI(model_name="gpt-4", openai_api_key=openai_api_key)
         qa_chain = RetrievalQA.from_chain_type(
             llm=llm, chain_type="stuff", retriever=vectorstore.as_retriever()
@@ -95,6 +106,100 @@ if conn is None:
     st.error("❌ Please ensure your data is loaded and API keys are configured.")
     st.stop()
 
+# Cache database queries
+@st.cache_data
+def get_themes():
+    """Get distinct themes from database"""
+    try:
+        if conn is None:
+            return ["All Themes"]
+        themes = conn.execute(
+            "SELECT DISTINCT theme FROM lego_data WHERE theme IS NOT NULL"
+        ).fetchall()
+        return ["All Themes"] + [theme[0] for theme in themes]
+    except Exception as e:
+        st.error(f"Error fetching themes: {e}")
+        return ["All Themes"]
+
+@st.cache_data
+def get_years():
+    """Get distinct years from database"""
+    try:
+        if conn is None:
+            return []
+        years = conn.execute(
+            "SELECT DISTINCT year FROM lego_data WHERE year IS NOT NULL ORDER BY year"
+        ).fetchall()
+        return [year[0] for year in years]
+    except Exception as e:
+        st.error(f"Error fetching years: {e}")
+        return []
+
+@st.cache_data
+def get_database_stats():
+    """Get database statistics"""
+    try:
+        if conn is None:
+            return [0, 0, 0, 0, 0, 0, 0]
+        stats = conn.execute(
+            """
+            SELECT 
+                COUNT(*) as total_records,
+                COUNT(DISTINCT source) as sources,
+                COUNT(DISTINCT theme) as themes,
+                AVG(pieces) as avg_pieces,
+                MIN(year) as oldest_year,
+                MAX(year) as newest_year,
+                AVG(price) as avg_price
+            FROM lego_data
+        """
+        ).fetchone()
+        return stats
+    except Exception as e:
+        st.error(f"Error fetching database stats: {e}")
+        return [0, 0, 0, 0, 0, 0, 0]
+
+@st.cache_data
+def get_theme_distribution():
+    """Get theme distribution data"""
+    try:
+        if conn is None:
+            return []
+        theme_data = conn.execute(
+            """
+            SELECT theme, COUNT(*) as count 
+            FROM lego_data 
+            WHERE theme IS NOT NULL 
+            GROUP BY theme 
+            ORDER BY count DESC 
+            LIMIT 10
+        """
+        ).fetchall()
+        return theme_data
+    except Exception as e:
+        st.error(f"Error fetching theme distribution: {e}")
+        return []
+
+@st.cache_data
+def get_year_distribution():
+    """Get year distribution data"""
+    try:
+        if conn is None:
+            return []
+        year_data = conn.execute(
+            """
+            SELECT year, COUNT(*) as count 
+            FROM lego_data 
+            WHERE year IS NOT NULL 
+            GROUP BY year 
+            ORDER BY year
+        """
+        ).fetchall()
+        return year_data
+    except Exception as e:
+        st.error(f"Error fetching year distribution: {e}")
+        return []
+
 
 # Performance monitoring
 @st.cache_data
@@ -102,7 +207,10 @@ def get_performance_metrics():
     """Get system performance metrics"""
     try:
         # Database metrics
-        db_count = conn.execute("SELECT COUNT(*) FROM lego_data").fetchone()[0]
+        if conn is None:
+            db_count = 0
+        else:
+            db_count = conn.execute("SELECT COUNT(*) FROM lego_data").fetchone()[0]
 
         # Cache status
         cache_dirs = [
@@ -156,17 +264,11 @@ with st.sidebar:
     # Advanced filters
     with st.expander("🔍 Advanced Filters"):
         # Theme filter
-        themes = conn.execute(
-            "SELECT DISTINCT theme FROM lego_data WHERE theme IS NOT NULL"
-        ).fetchall()
-        theme_options = ["All Themes"] + [theme[0] for theme in themes]
+        theme_options = get_themes()
         selected_theme = st.selectbox("Theme", theme_options)
 
         # Year range
-        years = conn.execute(
-            "SELECT DISTINCT year FROM lego_data WHERE year IS NOT NULL ORDER BY year"
-        ).fetchall()
-        year_options = [year[0] for year in years]
+        year_options = get_years()
         if year_options:
             year_range = st.select_slider(
                 "Year Range",
@@ -188,7 +290,7 @@ with st.sidebar:
         for i, query in enumerate(st.session_state.search_history[-5:]):
             if st.button(f"🔍 {query[:30]}...", key=f"history_{i}"):
                 st.session_state.current_query = query
-                st.experimental_rerun()
+                st.rerun()
 
     # Performance dashboard
     with st.expander("⚡ Performance Dashboard"):
@@ -260,7 +362,7 @@ with col1:
             if st.button(suggestion, key=f"sugg_{i}"):
                 query = suggestion
                 st.session_state.current_query = suggestion
-                st.experimental_rerun()
+                st.rerun()
 
     st.markdown("</div>", unsafe_allow_html=True)
 
@@ -306,7 +408,7 @@ if (query and search_button) or "current_query" in st.session_state:
                         st.info("We'll improve our responses!")
                 with col3:
                     if st.button("🔄 Regenerate"):
-                        st.experimental_rerun()
+                        st.rerun()
 
             with tab2:
                 st.subheader(f"📚 Top {search_k} Related Records")
@@ -434,20 +536,8 @@ if st.session_state.get("show_analytics", False):
 
     st.subheader("📊 LEGO Database Analytics")
 
-    # Get database statistics
-    stats = conn.execute(
-        """
-        SELECT 
-            COUNT(*) as total_records,
-            COUNT(DISTINCT source) as sources,
-            COUNT(DISTINCT theme) as themes,
-            AVG(pieces) as avg_pieces,
-            MIN(year) as oldest_year,
-            MAX(year) as newest_year,
-            AVG(price) as avg_price
-        FROM lego_data
-    """
-    ).fetchone()
+    # Get database statistics using cached function
+    stats = get_database_stats()
 
     # Display metrics
     col1, col2, col3, col4 = st.columns(4)
@@ -464,17 +554,8 @@ if st.session_state.get("show_analytics", False):
     col1, col2 = st.columns(2)
 
     with col1:
-        # Theme distribution
-        theme_data = conn.execute(
-            """
-            SELECT theme, COUNT(*) as count 
-            FROM lego_data 
-            WHERE theme IS NOT NULL 
-            GROUP BY theme 
-            ORDER BY count DESC 
-            LIMIT 10
-        """
-        ).fetchall()
+        # Theme distribution using cached function
+        theme_data = get_theme_distribution()
 
         if theme_data:
             df_themes = pd.DataFrame(theme_data, columns=["Theme", "Count"])
@@ -482,16 +563,8 @@ if st.session_state.get("show_analytics", False):
             st.plotly_chart(fig, use_container_width=True)
 
     with col2:
-        # Year distribution
-        year_data = conn.execute(
-            """
-            SELECT year, COUNT(*) as count 
-            FROM lego_data 
-            WHERE year IS NOT NULL 
-            GROUP BY year 
-            ORDER BY year
-        """
-        ).fetchall()
+        # Year distribution using cached function
+        year_data = get_year_distribution()
 
         if year_data:
             df_years = pd.DataFrame(year_data, columns=["Year", "Count"])
@@ -509,5 +582,5 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Cleanup
-conn.close()
+# Note: Connection is managed by Streamlit's caching system
+# Don't close it here as cached functions may still need it

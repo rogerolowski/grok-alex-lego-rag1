@@ -20,7 +20,8 @@ ENV PATH="/home/gitpod/.cargo/bin:$PATH"
 WORKDIR /workspace
 
 # Copy ALL necessary files for the build (not just pyproject.toml)
-COPY pyproject.toml README.md ./
+COPY pyproject.toml ./
+RUN echo "# LEGO RAG" > README.md
 COPY uv.lock* ./
 
 # Install dependencies only (no editable install yet)

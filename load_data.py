@@ -58,50 +58,51 @@ def fetch_rebrickable_enhanced(limit=200):
         print("⚠️  Rebrickable API key not found. Skipping Rebrickable data.")
         return []
 
-    # Popular themes to fetch
-    themes = [
-        "Star Wars",
-        "City",
-        "Technic",
-        "Creator",
-        "Architecture",
-        "Marvel",
-        "DC Comics",
-        "Harry Potter",
-        "Disney",
-        "Minecraft",
-        "Ninjago",
-        "Friends",
-        "Speed Champions",
-        "Ideas",
-        "Expert",
-    ]
+    # Popular theme IDs (from Rebrickable API)
+    theme_ids = {
+        "Star Wars": 171,      # Star Wars
+        "City": 52,            # City
+        "Technic": 1,          # Technic
+        "Creator": 22,         # Creator
+        "Architecture": 50,    # Architecture
+        "Marvel": 171,         # Marvel (same as Star Wars for now)
+        "DC Comics": 171,      # DC Comics (same as Star Wars for now)
+        "Harry Potter": 171,   # Harry Potter (same as Star Wars for now)
+        "Disney": 171,         # Disney (same as Star Wars for now)
+        "Minecraft": 171,      # Minecraft (same as Star Wars for now)
+        "Ninjago": 171,        # Ninjago (same as Star Wars for now)
+        "Friends": 171,        # Friends (same as Star Wars for now)
+        "Speed Champions": 171, # Speed Champions (same as Star Wars for now)
+        "Ideas": 171,          # Ideas (same as Star Wars for now)
+        "Expert": 171,         # Expert (same as Star Wars for now)
+    }
 
     all_sets = []
-    sets_per_theme = limit // len(themes)
+    sets_per_theme = min(100, limit // len(theme_ids))  # Max 100 per theme
 
-    for theme in themes:
-        print(f"  Fetching {theme} theme...")
+    for theme_name, theme_id in theme_ids.items():
+        print(f"  Fetching {theme_name} theme...")
         url = "https://rebrickable.com/api/v3/lego/sets/"
-        headers = {"Authorization": f"key {rebrickable_api_key}"}
-
+        
+        # Use key parameter instead of Authorization header
         params = {
-            "page_size": min(sets_per_theme, 100),
+            "key": rebrickable_api_key,
+            "page_size": min(sets_per_theme, 1000),  # Increased page size
             "ordering": "-set_num",
-            "theme_id": theme,  # You'd need to map theme names to IDs
+            "theme_id": theme_id,
         }
 
         try:
-            response = requests.get(url, headers=headers, params=params, timeout=30)
+            response = requests.get(url, params=params, timeout=30)
             response.raise_for_status()
             data = response.json()
 
             sets = data.get("results", [])[:sets_per_theme]
             all_sets.extend(sets)
-            print(f"    Found {len(sets)} {theme} sets")
+            print(f"    Found {len(sets)} {theme_name} sets")
 
         except Exception as e:
-            print(f"    Error fetching {theme}: {e}")
+            print(f"    Error fetching {theme_name}: {e}")
             continue
 
     print(f"  Total Rebrickable sets: {len(all_sets)}")
@@ -134,11 +135,13 @@ def fetch_brickset_enhanced(limit=200):
 
         user_hash = login_data.get("hash")
 
-        # Fetch from multiple years
+        # Fetch from multiple years and themes
         all_sets = []
-        years = [2024, 2023, 2022, 2021, 2020]
-        sets_per_year = limit // len(years)
-
+        
+        # Strategy 1: Get diverse years
+        years = [2024, 2023, 2022, 2021, 2020, 2019, 2018, 2017, 2016, 2015]
+        sets_per_year = min(100, limit // (len(years) + 5))  # Max 100 per year
+        
         for year in years:
             print(f"  Fetching {year} sets...")
             sets_url = "https://brickset.com/api/v3.asmx/getSets"
@@ -156,6 +159,34 @@ def fetch_brickset_enhanced(limit=200):
                 sets = sets_data.get("sets", [])[:sets_per_year]
                 all_sets.extend(sets)
                 print(f"    Found {len(sets)} {year} sets")
+
+        # Strategy 2: Get popular themes
+        popular_themes = ["Technic", "Star Wars", "City", "Creator", "Architecture", "Marvel", "Harry Potter", "Disney", "Ninjago", "Friends"]
+        sets_per_theme = 50  # Increased to 50 per theme
+        
+        for theme in popular_themes:
+            print(f"  Fetching {theme} theme sets...")
+            try:
+                theme_params = {
+                    "apiKey": brickset_api_key,
+                    "userHash": user_hash,
+                    "params": json.dumps({"theme": theme, "pageSize": sets_per_theme}),
+                }
+                
+                theme_response = requests.get(sets_url, params=theme_params, timeout=30)
+                theme_response.raise_for_status()
+                theme_data = theme_response.json()
+                
+                if theme_data.get("status") == "success":
+                    theme_sets = theme_data.get("sets", [])[:sets_per_theme]
+                    all_sets.extend(theme_sets)
+                    print(f"    Found {len(theme_sets)} {theme} sets")
+                else:
+                    print(f"    No {theme} sets found")
+                    
+            except Exception as e:
+                print(f"    Error fetching {theme}: {e}")
+                continue
 
         print(f"  Total Brickset sets: {len(all_sets)}")
         return all_sets
@@ -317,7 +348,7 @@ def create_faiss_index_enhanced(conn):
         """
         SELECT details, name, theme, year, pieces 
         FROM lego_data 
-        ORDER BY data_quality_score DESC
+        ORDER BY year DESC, pieces DESC
     """
     ).fetchall()
 
@@ -334,14 +365,8 @@ def create_faiss_index_enhanced(conn):
         year = row[3] or ""
         pieces = row[4] or ""
 
-        # Create rich text representation
-        enhanced_text = f"""
-        LEGO Set: {name}
-        Theme: {theme}
-        Year: {year}
-        Pieces: {pieces}
-        Details: {json.dumps(details, ensure_ascii=False)}
-        """
+        # Create optimized text representation (shorter to avoid token limits)
+        enhanced_text = f"LEGO Set: {name} | Theme: {theme} | Year: {year} | Pieces: {pieces} | Details: {json.dumps(details, ensure_ascii=False)[:500]}"
         enhanced_texts.append(enhanced_text)
 
     print(f"  Creating index for {len(enhanced_texts)} records...")
@@ -370,17 +395,18 @@ def main():
     # themes = fetch_rebrickable_themes()
 
     # Fetch data from all sources with enhanced limits
-    rebrickable_sets = fetch_rebrickable_enhanced(200)
-    brickset_sets = fetch_brickset_enhanced(200)
-    brickowl_sets = fetch_brickowl_enhanced(200)
+    # Skip Rebrickable and BrickOwl for now (need API keys)
+    rebrickable_sets = fetch_rebrickable_enhanced(1000)  # Increased to 1000
+    brickset_sets = fetch_brickset_enhanced(1000)  # Increased to 1000
+    # brickowl_sets = fetch_brickowl_enhanced(200)
 
     # Save to database
     if rebrickable_sets:
         save_to_database_enhanced(conn, rebrickable_sets, "rebrickable")
     if brickset_sets:
         save_to_database_enhanced(conn, brickset_sets, "brickset")
-    if brickowl_sets:
-        save_to_database_enhanced(conn, brickowl_sets, "brickowl")
+    # if brickowl_sets:
+    #     save_to_database_enhanced(conn, brickowl_sets, "brickowl")
 
     # Commit changes
     conn.commit()

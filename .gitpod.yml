@@ -45,9 +45,16 @@ tasks:
       echo "📦 Installing dependencies..."
       uv sync --frozen
       
-      # Load data
-      echo "📊 Loading data..."
-      python load_data.py
+      # Check if data already exists
+      if [ -f "lego_data.duckdb" ] && [ -d "faiss_index" ]; then
+        echo "✅ Database and FAISS index found - skipping data loading!"
+      else
+        echo "📊 Loading data..."
+        python load_data.py
+        
+        echo "🔍 Creating FAISS index..."
+        python fix_faiss.py
+      fi
       
       echo "✅ Initialization complete!"
     

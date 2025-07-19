@@ -33,14 +33,14 @@ Dockerfile
 # Streamlit
 *.streamlit/
 
-# Database files
-*.db
-*.duckdb
-lego_data.db
-lego_data.duckdb
+# Database files (keeping for Gitpod deployment)
+# *.db
+# *.duckdb
+# lego_data.db
+# lego_data.duckdb
 
-# FAISS index
-faiss_index/
+# FAISS index (keeping for Gitpod deployment)
+# faiss_index/
 
 # ChromaDB (legacy)
 chroma_db/
