@@ -16,6 +16,9 @@ RUN apt-get update && apt-get install -y \
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 ENV PATH="/home/gitpod/.cargo/bin:$PATH"
 
+# Set UV to use copy mode to avoid hardlinking issues
+ENV UV_LINK_MODE=copy
+
 # Set working directory early
 WORKDIR /workspace
 
