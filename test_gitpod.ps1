@@ -10,6 +10,7 @@ try {
     Write-Host "✅ Gitpod CLI found: $gitpodVersion" -ForegroundColor Green
 } catch {
     Write-Host "❌ Gitpod CLI not found. Install with: pnpm add -g gitpod" -ForegroundColor Red
+    Write-Host "   Or download from: https://www.gitpod.io/docs/gitpod-cli" -ForegroundColor Yellow
     exit 1
 }
 
@@ -23,13 +24,33 @@ try {
     Write-Host "   This will open your browser for authentication" -ForegroundColor Yellow
 }
 
-# Test Docker build locally
-Write-Host "`n🐳 Testing Docker build locally..." -ForegroundColor Yellow
+# Check project files
+Write-Host "`n📁 Checking project files..." -ForegroundColor Yellow
+$requiredFiles = @(".gitpod.yml", ".gitpod.Dockerfile", "pyproject.toml", "app.py")
+foreach ($file in $requiredFiles) {
+    if (Test-Path $file) {
+        Write-Host "✅ $file found" -ForegroundColor Green
+    } else {
+        Write-Host "❌ $file missing" -ForegroundColor Red
+    }
+}
+
+# Test Docker build locally (optional)
+Write-Host "`n🐳 Testing Docker build locally (optional)..." -ForegroundColor Yellow
 try {
     docker build -f .gitpod.Dockerfile -t lego-rag-test .
     Write-Host "✅ Docker build successful" -ForegroundColor Green
 } catch {
-    Write-Host "❌ Docker build failed. Check your .gitpod.Dockerfile" -ForegroundColor Red
+    Write-Host "⚠️ Docker build failed or Docker not available" -ForegroundColor Yellow
+    Write-Host "   This is optional - Gitpod will handle the build" -ForegroundColor Gray
+}
+
+# Check for environment files
+Write-Host "`n🔑 Checking environment files..." -ForegroundColor Yellow
+if (Test-Path ".env.gitpod") {
+    Write-Host "✅ .env.gitpod found (Gitpod environment)" -ForegroundColor Green
+} else {
+    Write-Host "ℹ️ .env.gitpod not found (optional - set in Gitpod Project Settings)" -ForegroundColor Cyan
 }
 
 # Show available commands
@@ -39,4 +60,5 @@ Write-Host "  gitpod prebuild                  # Trigger prebuild manually" -For
 Write-Host "  gitpod workspaces               # List your workspaces" -ForegroundColor White
 Write-Host "  gitpod stop                     # Stop a running workspace" -ForegroundColor White
 
-Write-Host "`n🎯 Ready to test! Run 'gitpod open .' to launch your workspace" -ForegroundColor Green 
+Write-Host "`n🎯 Ready to deploy! Run 'gitpod open .' to launch your workspace" -ForegroundColor Green
+Write-Host "   Expected startup time: ~30 seconds with prebuilds" -ForegroundColor Cyan 

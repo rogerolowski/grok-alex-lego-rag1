@@ -68,29 +68,26 @@ Vector Search: FAISS (CPU-optimized)
 APIs: 10+ LEGO data sources
 ```
 
-## ⚡ Why uv + conda?
+## ⚡ Why Gitpod?
 
-**uv** is a modern Python package manager that's 10x faster than pip, while **conda** provides excellent environment management:
+**Gitpod** provides the fastest and easiest way to run this LEGO RAG system:
 
-- **🚀 Lightning Fast**: uv parallel downloads and installations
-- **🔒 Reliable**: Lock file ensures reproducible builds
-- **📦 Smart Caching**: Intelligent dependency resolution
-- **🔄 Modern**: Built with Rust for maximum performance
-- **🎯 Simple**: One command to install everything
-- **🌍 Environment Management**: conda for Python version and system dependencies
-- **⚡ Best of Both**: uv speed + conda environment control
-- **⚡ Optimized Resolution**: Fastest dependency resolver with parallel downloads
-
-> **💻 Dev Note**: Using conda locally because Windows 11 can be... Windows 11. But this is designed to run on Gitpod for demos, so the conda stuff is just for local dev convenience.
+- **🚀 One-Click Setup**: Just click the button above
+- **⚡ Prebuilt Environment**: 30-second startup with prebuilds
+- **🔧 Zero Configuration**: Everything works out of the box
+- **🌐 Cloud-Based**: No local setup required
+- **📊 Performance Optimized**: Built with uv, BuildKit, and caching
+- **🔄 Always Updated**: Latest dependencies and optimizations
 
 ---
 
 ## 📋 Prerequisites
 
 ### **Required**
-- **OpenAI API Key** ([Get Here](https://platform.openai.com/api-keys))
+- **Gitpod Account** (free at [gitpod.io](https://gitpod.io))
 
-### **Optional** (for additional data sources)
+### **Optional** (for enhanced features)
+- **OpenAI API Key** ([Get Here](https://platform.openai.com/api-keys))
 - **Rebrickable API Key** ([Get Here](https://rebrickable.com/api/))
 - **Brickset API Key** ([Register Here](https://brickset.com))
 - **BrickOwl API Key** ([Get Here](https://www.brickowl.com))
@@ -98,83 +95,23 @@ APIs: 10+ LEGO data sources
 
 ---
 
-## ⚙️ Setup Options
+## 🚀 Deploy on Gitpod
 
-### **Option 1: Gitpod (Recommended) 🚀**
+### **One-Click Deployment**
 1. **Click** the Gitpod button above
-2. **Add API keys** to environment variables
+2. **Add API keys** to environment variables (optional)
 3. **Wait 30 seconds** for setup (with prebuilds)
 4. **Start searching** - app opens automatically
 
 > **⚡ With Prebuilds**: Workspace ready in ~30 seconds instead of 2-3 minutes
 
-### **Option 2: Local Development**
-
-> **💻 Dev Note**: Local setup uses conda because Windows 11. For production/demos, just use Gitpod - it's way easier.
-
-#### **uv + conda (Local Dev - Windows friendly)**
-```bash
-git clone https://github.com/rogerolowski/grok-alex-lego-rag1.git
-cd grok-alex-lego-rag1
-
-# Create conda environment (Windows 11 workaround)
-conda create -n lego-rag python=3.10
-conda activate lego-rag
-
-# Install uv (if not already installed)
-curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# Install dependencies and create virtual environment
-uv sync
-
-# Load data and start app
-python load_data.py
-streamlit run app.py
-```
-
-#### **uv only (Alternative - Linux/Mac)**
-```bash
-git clone https://github.com/rogerolowski/grok-alex-lego-rag1.git
-cd grok-alex-lego-rag1
-
-# Install uv (if not already installed)
-curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# Install dependencies and create virtual environment
-uv sync
-
-# Load data and start app
-python load_data.py
-streamlit run app.py
-```
-
-#### **Pip (Alternative - if uv fails)**
-```bash
-git clone https://github.com/rogerolowski/grok-alex-lego-rag1.git
-cd grok-alex-lego-rag1
-pip install -e .
-python load_data.py
-streamlit run app.py
-```
-
 ---
 
-## 🔧 Configuration
+## 🔧 Configuration (Optional)
 
-### **Local Development**
-Create `.env` file:
-```env
-OPENAI_API_KEY=your_openai_key_here
-REBRICKABLE_API_KEY=your_rebrickable_key_here
-BRICKSET_API_KEY=your_brickset_key_here
-BRICKSET_USERNAME=your_brickset_username
-BRICKSET_PASSWORD=your_brickset_password
-BRICKOWL_API_KEY=your_brickowl_key_here
-BRICKLINK_TOKEN=your_bricklink_token_here
-```
+### **API Keys for Enhanced Features**
+Set these in Gitpod Project Settings → Variables:
 
-### **Gitpod Deployment**
-Create `.env.gitpod` file (or set in Gitpod Project Settings → Variables):
 ```env
 OPENAI_API_KEY=your_openai_key_here
 REBRICKABLE_API_KEY=your_rebrickable_key_here
@@ -188,18 +125,16 @@ PIP_CACHE_DIR=/workspace/.cache/pip
 UV_CACHE_DIR=/workspace/.cache/uv
 ```
 
-> **💻 Dev Note**: The system automatically detects Gitpod environment and loads `.env.gitpod` when `IN_GITPOD=true`, otherwise loads `.env` for local development.
+> **💡 Note**: The app works without API keys, but you'll get enhanced data and features with them.
 
 ---
 
 ## 🎮 Usage
 
-### **Enhanced App Features**
-- **Smart Search**: Natural language queries with AI responses
-- **Visual Analytics**: Interactive charts and data visualization
-- **Advanced Filters**: Multi-criteria filtering and sorting
-- **Search History**: Track and reuse previous queries
-- **Quality Metrics**: Data completeness and source breakdown
+### **Getting Started**
+1. **Click** the Gitpod button above
+2. **Wait** for the workspace to load (~30 seconds)
+3. **Start searching** - the app opens automatically
 
 ### **Example Queries**
 - "What are the best Star Wars LEGO sets?"
@@ -208,11 +143,12 @@ UV_CACHE_DIR=/workspace/.cache/uv
 - "LEGO Architecture sets under $100"
 - "Educational sets for kids 7-10 years old"
 
-### **Search Optimization**
-- **Query-Type Detection**: Automatic optimization based on query content
-- **Similarity Thresholds**: Adjustable result quality filtering
-- **K-Value Tuning**: Configurable number of results
-- **Performance Analytics**: Search speed and accuracy metrics
+### **Features**
+- **Smart Search**: Natural language queries with AI responses
+- **Visual Analytics**: Interactive charts and data visualization
+- **Advanced Filters**: Multi-criteria filtering and sorting
+- **Search History**: Track and reuse previous queries
+- **Performance Dashboard**: Real-time system metrics
 
 ---
 
