@@ -1,6 +1,9 @@
 # syntax=docker/dockerfile:1.4
 FROM gitpod/workspace-full
 
+# Switch to root user for installation
+USER root
+
 # Install system dependencies in one layer
 RUN apt-get update && apt-get install -y \
     python3.10 \
